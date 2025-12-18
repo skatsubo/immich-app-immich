@@ -149,6 +149,11 @@ export class BackupService extends BaseService {
           reject(err);
         });
 
+        fileStream.on('error', (err) => {
+          this.logger.error(`File write failed with error: ${err}`);
+          reject(err);
+        });
+
         let pgdumpLogs = '';
         let gzipLogs = '';
 
