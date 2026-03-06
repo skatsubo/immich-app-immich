@@ -409,6 +409,7 @@ export enum VideoCodec {
 export enum AudioCodec {
   Mp3 = 'mp3',
   Aac = 'aac',
+  Libopus = 'libopus',
   Opus = 'opus',
   PcmS16le = 'pcm_s16le',
 }
