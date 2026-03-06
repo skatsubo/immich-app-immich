@@ -93,13 +93,11 @@ export class SystemConfigFFmpegDto {
 
   @ValidateEnum({ enum: AudioCodec, name: 'AudioCodec', each: true, description: 'Accepted audio codecs' })
   @Transform(({ value }) => {
-    if (!Array.isArray(value)) {
-      return value;
-    }
-
-    const libopusIndex = value.findIndex((codec) => codec === 'libopus');
-    if (libopusIndex !== -1) {
-      value[libopusIndex] = 'opus';
+    if (Array.isArray(value)) {
+      const libopusIndex = value.findIndex((codec) => codec === 'libopus');
+      if (libopusIndex !== -1) {
+        value[libopusIndex] = 'opus';
+      }
     }
 
     return value;
