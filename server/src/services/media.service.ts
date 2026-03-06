@@ -675,13 +675,6 @@ export class MediaService extends BaseService {
     const isAudioTranscodeRequired = this.isAudioTranscodeRequired(config, audioStream);
     const isVideoTranscodeRequired = this.isVideoTranscodeRequired(config, videoStream);
 
-    this.logger.log(
-      `config.acceptedAudioCodecs: ${config.acceptedAudioCodecs} \n audioStream.codecName: ${audioStream?.codecName} \n isAudioTranscodeRequired: ${isAudioTranscodeRequired}`,
-    );
-    this.logger.log(
-      `config.acceptedVideoCodecs: ${config.acceptedVideoCodecs} \n videoStream.codecName: ${videoStream?.codecName} \n isVideoTranscodeRequired: ${isVideoTranscodeRequired}`,
-    );
-
     if (isAudioTranscodeRequired && isVideoTranscodeRequired) {
       return TranscodeTarget.All;
     }
