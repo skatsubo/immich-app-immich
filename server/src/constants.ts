@@ -202,6 +202,9 @@ export const endpointTags: Record<ApiTag, string> = {
     'A workflow is a set of actions that run whenever a triggering event occurs. Workflows also can include filters to further limit execution.',
 };
 
-export const audioEncoder: Partial<Record<AudioCodec, string>> = {
+export const AUDIO_ENCODER: Record<AudioCodec, string> = {
+  [AudioCodec.Aac]: 'aac',
+  [AudioCodec.Mp3]: 'mp3',
   [AudioCodec.Opus]: 'libopus',
+  [AudioCodec.PcmS16le]: 'pcm_s16le',
 };

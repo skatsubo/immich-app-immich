@@ -1,4 +1,4 @@
-import { audioEncoder } from 'src/constants';
+import { AUDIO_ENCODER } from 'src/constants';
 import { SystemConfigFFmpegDto } from 'src/dtos/system-config.dto';
 import { CQMode, ToneMapping, TranscodeHardwareAcceleration, TranscodeTarget, VideoCodec } from 'src/enum';
 import {
@@ -307,7 +307,7 @@ export class BaseConfig implements VideoCodecSWConfig {
   }
 
   getAudioEncoder(): string {
-    return audioEncoder[this.config.targetAudioCodec] ?? this.config.targetAudioCodec;
+    return AUDIO_ENCODER[this.config.targetAudioCodec];
   }
 
   getVideoCodec(): string {
