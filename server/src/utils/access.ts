@@ -5,6 +5,9 @@ import { AlbumUserRole, Permission } from 'src/enum';
 import { AccessRepository } from 'src/repositories/access.repository';
 import { setDifference, setIsEqual, setIsSuperset, setUnion } from 'src/utils/set';
 
+const EXP_GROUP_READ = true;
+// const EXP_GROUP_READ = false;
+
 export type GrantedRequest = {
   requested: Permission[];
   current: Permission[];
@@ -120,9 +123,10 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
 
     case Permission.AssetRead: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids, auth.session?.hasElevatedPermission);
+      const isGroup = EXP_GROUP_READ ? await access.asset.checkGroupAccess(auth.user.id, ids) : new Set<string>();
       const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
-      return setUnion(isOwner, isAlbum, isPartner);
+      return setUnion(isOwner, isGroup, isAlbum, isPartner);
     }
 
     case Permission.AssetShare: {
@@ -133,16 +137,18 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
 
     case Permission.AssetView: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids, auth.session?.hasElevatedPermission);
+      const isGroup = EXP_GROUP_READ ? await access.asset.checkGroupAccess(auth.user.id, ids) : new Set<string>();
       const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
-      return setUnion(isOwner, isAlbum, isPartner);
+      return setUnion(isOwner, isGroup, isAlbum, isPartner);
     }
 
     case Permission.AssetDownload: {
       const isOwner = await access.asset.checkOwnerAccess(auth.user.id, ids, auth.session?.hasElevatedPermission);
+      const isGroup = EXP_GROUP_READ ? await access.asset.checkGroupAccess(auth.user.id, ids) : new Set<string>();
       const isAlbum = await access.asset.checkAlbumAccess(auth.user.id, setDifference(ids, isOwner));
       const isPartner = await access.asset.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner, isAlbum));
-      return setUnion(isOwner, isAlbum, isPartner);
+      return setUnion(isOwner, isGroup, isAlbum, isPartner);
     }
 
     case Permission.AssetUpdate: {
