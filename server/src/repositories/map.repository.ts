@@ -55,6 +55,9 @@ export class MapRepository {
     this.logger.setContext(MapRepository.name);
   }
 
+  private static EXP_GROUP_READ = true;
+  // private static EXP_GROUP_READ = false;
+
   async init(): Promise<void> {
     this.logger.log('Initializing metadata repository');
     const { resourcePaths } = this.configRepository.getEnv();
@@ -118,7 +121,11 @@ export class MapRepository {
         const expression: Expression<SqlBool>[] = [];
 
         if (ownerIds.length > 0) {
-          expression.push(eb('ownerId', 'in', ownerIds));
+          if (MapRepository.EXP_GROUP_READ) {
+            expression.push(eb.lit(true));
+          } else {
+            expression.push(eb('ownerId', 'in', ownerIds));
+          }
         }
 
         if (albumIds.length > 0) {
