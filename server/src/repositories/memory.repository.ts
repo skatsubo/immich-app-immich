@@ -14,6 +14,9 @@ import { IBulkAsset } from 'src/types';
 export class MemoryRepository implements IBulkAsset {
   constructor(@InjectKysely() private db: Kysely<DB>) {}
 
+  private static EXP_GROUP_READ = true;
+  // private static EXP_GROUP_READ = false;
+
   async cleanup() {
     await this.db
       .deleteFrom('memory_asset')
@@ -40,7 +43,8 @@ export class MemoryRepository implements IBulkAsset {
           .where((where) => where.or([where('hideAt', 'is', null), where('hideAt', '>=', dto.for!)])),
       )
       .where('deletedAt', dto.isTrashed ? 'is not' : 'is', null)
-      .where('ownerId', '=', ownerId);
+      // .where('ownerId', '=', ownerId);
+      .$if(!MemoryRepository.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', ownerId));
   }
 
   @GenerateSql(

@@ -268,6 +268,7 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
       return await access.tag.checkOwnerAccess(auth.user.id, ids);
     }
 
+    // TODO: what does it do?
     case Permission.TimelineRead: {
       const isOwner = ids.has(auth.user.id) ? new Set([auth.user.id]) : new Set<string>();
       const isPartner = await access.timeline.checkPartnerAccess(auth.user.id, setDifference(ids, isOwner));
@@ -279,7 +280,10 @@ const checkOtherAccess = async (access: AccessRepository, request: OtherAccessRe
     }
 
     case Permission.MemoryRead: {
-      return access.memory.checkOwnerAccess(auth.user.id, ids);
+      const isOwner = await access.memory.checkOwnerAccess(auth.user.id, ids);
+      const isGroup = EXP_GROUP_READ ? await access.memory.checkGroupAccess(auth.user.id, ids) : new Set<string>();
+      return setUnion(isOwner, isGroup);
+      // return access.memory.checkOwnerAccess(auth.user.id, ids);
     }
 
     case Permission.MemoryUpdate: {

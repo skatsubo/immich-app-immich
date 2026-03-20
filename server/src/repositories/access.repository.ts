@@ -399,6 +399,24 @@ class MemoryAccess {
       .execute()
       .then((memories) => new Set(memories.map((memory) => memory.id)));
   }
+
+  // checkGroupAccess: derived from checkOwnerAccess by removing ownership check
+  @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET] })
+  @ChunkedSet({ paramIndex: 1 })
+  async checkGroupAccess(userId: string, memoryIds: Set<string>) {
+    if (memoryIds.size === 0) {
+      return new Set<string>();
+    }
+
+    return this.db
+      .selectFrom('memory')
+      .select('memory.id')
+      .where('memory.id', 'in', [...memoryIds])
+      // .where('memory.ownerId', '=', userId)
+      .where('memory.deletedAt', 'is', null)
+      .execute()
+      .then((memories) => new Set(memories.map((memory) => memory.id)));
+  }
 }
 
 class PersonAccess {
