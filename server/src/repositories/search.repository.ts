@@ -185,6 +185,9 @@ export interface GetCameraLensModelsOptions {
 export class SearchRepository {
   constructor(@InjectKysely() private db: Kysely<DB>) {}
 
+  private static EXP_GROUP_READ = true;
+  // private static EXP_GROUP_READ = false;
+
   @GenerateSql({
     params: [
       { page: 1, size: 100 },
@@ -344,7 +347,8 @@ export class SearchRepository {
             .innerJoin('asset', 'asset.id', 'asset_face.assetId')
             .innerJoin('face_search', 'face_search.faceId', 'asset_face.id')
             .leftJoin('person', 'person.id', 'asset_face.personId')
-            .where('asset.ownerId', '=', anyUuid(userIds))
+            // .where('asset.ownerId', '=', anyUuid(userIds))
+            .$if(!SearchRepository.EXP_GROUP_READ, (qb) => qb.where('asset.ownerId', '=', anyUuid(userIds)))
             .where('asset.deletedAt', 'is', null)
             .$if(!!hasPerson, (qb) => qb.where('asset_face.personId', 'is not', null))
             .$if(!!minBirthDate, (qb) =>
@@ -397,7 +401,8 @@ export class SearchRepository {
           .selectFrom('asset_exif')
           .select(['city', 'assetId'])
           .innerJoin('asset', 'asset.id', 'asset_exif.assetId')
-          .where('asset.ownerId', '=', anyUuid(userIds))
+          // .where('asset.ownerId', '=', anyUuid(userIds))
+          .$if(!SearchRepository.EXP_GROUP_READ, (qb) => qb.where('asset.ownerId', '=', anyUuid(userIds)))
           .where('asset.visibility', '=', AssetVisibility.Timeline)
           .where('asset.type', '=', AssetType.Image)
           .where('asset.deletedAt', 'is', null)
@@ -413,7 +418,8 @@ export class SearchRepository {
                 .selectFrom('asset_exif')
                 .select(['city', 'assetId'])
                 .innerJoin('asset', 'asset.id', 'asset_exif.assetId')
-                .where('asset.ownerId', '=', anyUuid(userIds))
+                // .where('asset.ownerId', '=', anyUuid(userIds))
+                .$if(!SearchRepository.EXP_GROUP_READ, (qb) => qb.where('asset.ownerId', '=', anyUuid(userIds)))
                 .where('asset.visibility', '=', AssetVisibility.Timeline)
                 .where('asset.type', '=', AssetType.Image)
                 .where('asset.deletedAt', 'is', null)
@@ -503,15 +509,18 @@ export class SearchRepository {
   }
 
   private getExifField(field: 'city' | 'state' | 'country' | 'make' | 'model' | 'lensModel', userIds: string[]) {
-    return this.db
-      .selectFrom('asset_exif')
-      .select(field)
-      .distinctOn(field)
-      .innerJoin('asset', 'asset.id', 'asset_exif.assetId')
-      .where('ownerId', '=', anyUuid(userIds))
-      .where('visibility', '=', AssetVisibility.Timeline)
-      .where('deletedAt', 'is', null)
-      .where(field, 'is not', null)
-      .where(field, '!=', '');
+    return (
+      this.db
+        .selectFrom('asset_exif')
+        .select(field)
+        .distinctOn(field)
+        .innerJoin('asset', 'asset.id', 'asset_exif.assetId')
+        // .where('ownerId', '=', anyUuid(userIds))
+        .$if(!SearchRepository.EXP_GROUP_READ, (qb) => qb.where('asset.ownerId', '=', anyUuid(userIds)))
+        .where('visibility', '=', AssetVisibility.Timeline)
+        .where('deletedAt', 'is', null)
+        .where(field, 'is not', null)
+        .where(field, '!=', '')
+    );
   }
 }
