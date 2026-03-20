@@ -79,6 +79,9 @@ const withFaceSearch = (eb: ExpressionBuilder<DB, 'asset_face'>) => {
 export class PersonRepository {
   constructor(@InjectKysely() private db: Kysely<DB>) {}
 
+  private static EXP_GROUP_READ = true;
+  // private static EXP_GROUP_READ = false;
+
   @GenerateSql({ params: [{ oldPersonId: DummyValue.UUID, newPersonId: DummyValue.UUID }] })
   async reassignFaces({ oldPersonId, faceIds, newPersonId }: UpdateFacesData): Promise<number> {
     const result = await this.db
@@ -127,15 +130,20 @@ export class PersonRepository {
   }
 
   getAll(options: GetAllPeopleOptions = {}) {
-    return this.db
-      .selectFrom('person')
-      .selectAll('person')
-      .$if(!!options.ownerId, (qb) => qb.where('person.ownerId', '=', options.ownerId!))
-      .$if(options.thumbnailPath !== undefined, (qb) => qb.where('person.thumbnailPath', '=', options.thumbnailPath!))
-      .$if(options.faceAssetId === null, (qb) => qb.where('person.faceAssetId', 'is', null))
-      .$if(!!options.faceAssetId, (qb) => qb.where('person.faceAssetId', '=', options.faceAssetId!))
-      .$if(options.isHidden !== undefined, (qb) => qb.where('person.isHidden', '=', options.isHidden!))
-      .stream();
+    return (
+      this.db
+        .selectFrom('person')
+        .selectAll('person')
+        // .$if(!!options.ownerId, (qb) => qb.where('person.ownerId', '=', options.ownerId!))
+        .$if(!!options.ownerId && !PersonRepository.EXP_GROUP_READ, (qb) =>
+          qb.where('person.ownerId', '=', options.ownerId!),
+        )
+        .$if(options.thumbnailPath !== undefined, (qb) => qb.where('person.thumbnailPath', '=', options.thumbnailPath!))
+        .$if(options.faceAssetId === null, (qb) => qb.where('person.faceAssetId', 'is', null))
+        .$if(!!options.faceAssetId, (qb) => qb.where('person.faceAssetId', '=', options.faceAssetId!))
+        .$if(options.isHidden !== undefined, (qb) => qb.where('person.isHidden', '=', options.isHidden!))
+        .stream()
+    );
   }
 
   @GenerateSql()
@@ -160,7 +168,8 @@ export class PersonRepository {
           .on('asset.visibility', '=', sql.lit(AssetVisibility.Timeline))
           .on('asset.deletedAt', 'is', null),
       )
-      .where('person.ownerId', '=', userId)
+      // .where('person.ownerId', '=', userId)
+      .$if(!PersonRepository.EXP_GROUP_READ, (qb) => qb.where('person.ownerId', '=', userId))
       .where('asset_face.deletedAt', 'is', null)
       .where('asset_face.isVisible', 'is', true)
       .orderBy('person.isHidden', 'asc')
@@ -320,9 +329,10 @@ export class PersonRepository {
     return this.db
       .selectFrom('person')
       .selectAll('person')
+      .$if(!PersonRepository.EXP_GROUP_READ, (qb) => qb.where('person.ownerId', '=', userId))
       .where((eb) =>
         eb.and([
-          eb('person.ownerId', '=', userId),
+          // eb('person.ownerId', '=', userId),
           eb.or([
             eb(eb.fn('lower', ['person.name']), 'like', `${personName.toLowerCase()}%`),
             eb(eb.fn('lower', ['person.name']), 'like', `% ${personName.toLowerCase()}%`),
@@ -336,13 +346,17 @@ export class PersonRepository {
 
   @GenerateSql({ params: [DummyValue.UUID, { withHidden: true }] })
   getDistinctNames(userId: string, { withHidden }: PersonNameSearchOptions): Promise<PersonNameResponse[]> {
-    return this.db
-      .selectFrom('person')
-      .select(['person.id', 'person.name'])
-      .distinctOn((eb) => eb.fn('lower', ['person.name']))
-      .where((eb) => eb.and([eb('person.ownerId', '=', userId), eb('person.name', '!=', '')]))
-      .$if(!withHidden, (qb) => qb.where('person.isHidden', '=', false))
-      .execute();
+    return (
+      this.db
+        .selectFrom('person')
+        .select(['person.id', 'person.name'])
+        .distinctOn((eb) => eb.fn('lower', ['person.name']))
+        // .where((eb) => eb.and([eb('person.ownerId', '=', userId), eb('person.name', '!=', '')]))
+        .$if(!PersonRepository.EXP_GROUP_READ, (qb) => qb.where('person.ownerId', '=', userId))
+        .where('person.name', '!=', '')
+        .$if(!withHidden, (qb) => qb.where('person.isHidden', '=', false))
+        .execute()
+    );
   }
 
   @GenerateSql({ params: [DummyValue.UUID] })
@@ -369,30 +383,33 @@ export class PersonRepository {
   @GenerateSql({ params: [DummyValue.UUID] })
   getNumberOfPeople(userId: string) {
     const zero = sql.lit(0);
-    return this.db
-      .selectFrom('person')
-      .where((eb) =>
-        eb.exists((eb) =>
-          eb
-            .selectFrom('asset_face')
-            .whereRef('asset_face.personId', '=', 'person.id')
-            .where('asset_face.deletedAt', 'is', null)
-            .where('asset_face.isVisible', '=', true)
-            .where((eb) =>
-              eb.exists((eb) =>
-                eb
-                  .selectFrom('asset')
-                  .whereRef('asset.id', '=', 'asset_face.assetId')
-                  .where('asset.visibility', '=', sql.lit(AssetVisibility.Timeline))
-                  .where('asset.deletedAt', 'is', null),
+    return (
+      this.db
+        .selectFrom('person')
+        .where((eb) =>
+          eb.exists((eb) =>
+            eb
+              .selectFrom('asset_face')
+              .whereRef('asset_face.personId', '=', 'person.id')
+              .where('asset_face.deletedAt', 'is', null)
+              .where('asset_face.isVisible', '=', true)
+              .where((eb) =>
+                eb.exists((eb) =>
+                  eb
+                    .selectFrom('asset')
+                    .whereRef('asset.id', '=', 'asset_face.assetId')
+                    .where('asset.visibility', '=', sql.lit(AssetVisibility.Timeline))
+                    .where('asset.deletedAt', 'is', null),
+                ),
               ),
-            ),
-        ),
-      )
-      .where('person.ownerId', '=', userId)
-      .select((eb) => eb.fn.coalesce(eb.fn.countAll<number>(), zero).as('total'))
-      .select((eb) => eb.fn.coalesce(eb.fn.countAll<number>().filterWhere('isHidden', '=', true), zero).as('hidden'))
-      .executeTakeFirstOrThrow();
+          ),
+        )
+        // .where('person.ownerId', '=', userId)
+        .$if(!PersonRepository.EXP_GROUP_READ, (qb) => qb.where('person.ownerId', '=', userId))
+        .select((eb) => eb.fn.coalesce(eb.fn.countAll<number>(), zero).as('total'))
+        .select((eb) => eb.fn.coalesce(eb.fn.countAll<number>().filterWhere('isHidden', '=', true), zero).as('hidden'))
+        .executeTakeFirstOrThrow()
+    );
   }
 
   create(person: Insertable<PersonTable>) {

@@ -438,6 +438,23 @@ class PersonAccess {
       .then((persons) => new Set(persons.map((person) => person.id)));
   }
 
+  // checkGroupAccess: derived from checkOwnerAccess by removing ownership check
+  @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET] })
+  @ChunkedSet({ paramIndex: 1 })
+  async checkGroupAccess(userId: string, personIds: Set<string>) {
+    if (personIds.size === 0) {
+      return new Set<string>();
+    }
+
+    return this.db
+      .selectFrom('person')
+      .select('person.id')
+      .where('person.id', 'in', [...personIds])
+      // .where('person.ownerId', '=', userId)
+      .execute()
+      .then((persons) => new Set(persons.map((person) => person.id)));
+  }
+
   @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET] })
   @ChunkedSet({ paramIndex: 1 })
   async checkFaceOwnerAccess(userId: string, assetFaceIds: Set<string>) {
@@ -451,6 +468,24 @@ class PersonAccess {
       .leftJoin('asset', (join) => join.onRef('asset.id', '=', 'asset_face.assetId').on('asset.deletedAt', 'is', null))
       .where('asset_face.id', 'in', [...assetFaceIds])
       .where('asset.ownerId', '=', userId)
+      .execute()
+      .then((faces) => new Set(faces.map((face) => face.id)));
+  }
+
+  // checkFaceGroupAccess: derived from checkOwnerAccess by removing ownership check
+  @GenerateSql({ params: [DummyValue.UUID, DummyValue.UUID_SET] })
+  @ChunkedSet({ paramIndex: 1 })
+  async checkFaceGroupAccess(userId: string, assetFaceIds: Set<string>) {
+    if (assetFaceIds.size === 0) {
+      return new Set<string>();
+    }
+
+    return this.db
+      .selectFrom('asset_face')
+      .select('asset_face.id')
+      .leftJoin('asset', (join) => join.onRef('asset.id', '=', 'asset_face.assetId').on('asset.deletedAt', 'is', null))
+      .where('asset_face.id', 'in', [...assetFaceIds])
+      // .where('asset.ownerId', '=', userId)
       .execute()
       .then((faces) => new Set(faces.map((face) => face.id)));
   }
