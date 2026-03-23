@@ -96,6 +96,9 @@ export class SyncRepository {
 export class BaseSync {
   constructor(protected db: Kysely<DB>) {}
 
+  protected static EXP_GROUP_READ = true;
+  // protected static EXP_GROUP_READ = false;
+
   protected backfillQuery<T extends keyof DB>(t: T, { nowId, beforeUpdateId, afterUpdateId }: SyncBackfillOptions) {
     const { table, ref } = this.db.dynamic;
     const updateIdRef = ref(`${t}.updateId`);
@@ -388,10 +391,13 @@ class AlbumUserSync extends BaseSync {
 class AssetSync extends BaseSync {
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getDeletes(options: SyncQueryOptions) {
-    return this.auditQuery('asset_audit', options)
-      .select(['id', 'assetId'])
-      .where('ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.auditQuery('asset_audit', options)
+        .select(['id', 'assetId'])
+        // .where('ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        .stream()
+    );
   }
 
   cleanupAuditTable(daysAgo: number) {
@@ -400,11 +406,14 @@ class AssetSync extends BaseSync {
 
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getUpserts(options: SyncQueryOptions) {
-    return this.upsertQuery('asset', options)
-      .select(columns.syncAsset)
-      .select('asset.updateId')
-      .where('ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.upsertQuery('asset', options)
+        .select(columns.syncAsset)
+        .select('asset.updateId')
+        // .where('ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        .stream()
+    );
   }
 }
 
@@ -422,10 +431,13 @@ class AuthUserSync extends BaseSync {
 class PersonSync extends BaseSync {
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getDeletes(options: SyncQueryOptions) {
-    return this.auditQuery('person_audit', options)
-      .select(['id', 'personId'])
-      .where('ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.auditQuery('person_audit', options)
+        .select(['id', 'personId'])
+        // .where('ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        .stream()
+    );
   }
 
   cleanupAuditTable(daysAgo: number) {
@@ -434,33 +446,39 @@ class PersonSync extends BaseSync {
 
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getUpserts(options: SyncQueryOptions) {
-    return this.upsertQuery('person', options)
-      .select([
-        'id',
-        'createdAt',
-        'updatedAt',
-        'ownerId',
-        'name',
-        'birthDate',
-        'isHidden',
-        'isFavorite',
-        'color',
-        'updateId',
-        'faceAssetId',
-      ])
-      .where('ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.upsertQuery('person', options)
+        .select([
+          'id',
+          'createdAt',
+          'updatedAt',
+          'ownerId',
+          'name',
+          'birthDate',
+          'isHidden',
+          'isFavorite',
+          'color',
+          'updateId',
+          'faceAssetId',
+        ])
+        // .where('ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        .stream()
+    );
   }
 }
 
 class AssetFaceSync extends BaseSync {
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getDeletes(options: SyncQueryOptions) {
-    return this.auditQuery('asset_face_audit', options)
-      .select(['asset_face_audit.id', 'assetFaceId'])
-      .leftJoin('asset', 'asset.id', 'asset_face_audit.assetId')
-      .where('asset.ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.auditQuery('asset_face_audit', options)
+        .select(['asset_face_audit.id', 'assetFaceId'])
+        .leftJoin('asset', 'asset.id', 'asset_face_audit.assetId')
+        // .where('asset.ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        .stream()
+    );
   }
 
   cleanupAuditTable(daysAgo: number) {
@@ -469,25 +487,29 @@ class AssetFaceSync extends BaseSync {
 
   @GenerateSql({ params: [dummyQueryOptions], stream: true })
   getUpserts(options: SyncQueryOptions) {
-    return this.upsertQuery('asset_face', options)
-      .select([
-        'asset_face.id',
-        'assetId',
-        'personId',
-        'imageWidth',
-        'imageHeight',
-        'boundingBoxX1',
-        'boundingBoxY1',
-        'boundingBoxX2',
-        'boundingBoxY2',
-        'sourceType',
-        'isVisible',
-        'asset_face.deletedAt',
-        'asset_face.updateId',
-      ])
-      .leftJoin('asset', 'asset.id', 'asset_face.assetId')
-      .where('asset.ownerId', '=', options.userId)
-      .stream();
+    return (
+      this.upsertQuery('asset_face', options)
+        .select([
+          'asset_face.id',
+          'assetId',
+          'personId',
+          'imageWidth',
+          'imageHeight',
+          'boundingBoxX1',
+          'boundingBoxY1',
+          'boundingBoxX2',
+          'boundingBoxY2',
+          'sourceType',
+          'isVisible',
+          'asset_face.deletedAt',
+          'asset_face.updateId',
+        ])
+        .leftJoin('asset', 'asset.id', 'asset_face.assetId')
+        // .where('asset.ownerId', '=', options.userId)
+        .$if(!BaseSync.EXP_GROUP_READ, (qb) => qb.where('ownerId', '=', options.userId))
+        // .where('asset_face.isVisible', '=', true)
+        .stream()
+    );
   }
 }
 
