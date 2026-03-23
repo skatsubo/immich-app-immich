@@ -109,6 +109,14 @@ where
   and "asset"."ownerId" = $2
   and "asset"."visibility" != $3
 
+-- AccessRepository.asset.checkGroupAccess
+select
+  "asset"."id"
+from
+  "asset"
+where
+  "asset"."id" in ($1)
+
 -- AccessRepository.asset.checkPartnerAccess
 select
   "asset"."id"
@@ -170,6 +178,15 @@ where
   and "memory"."ownerId" = $2
   and "memory"."deletedAt" is null
 
+-- AccessRepository.memory.checkGroupAccess
+select
+  "memory"."id"
+from
+  "memory"
+where
+  "memory"."id" in ($1)
+  and "memory"."deletedAt" is null
+
 -- AccessRepository.notification.checkOwnerAccess
 select
   "notification"."id"
@@ -188,6 +205,14 @@ where
   "person"."id" in ($1)
   and "person"."ownerId" = $2
 
+-- AccessRepository.person.checkGroupAccess
+select
+  "person"."id"
+from
+  "person"
+where
+  "person"."id" in ($1)
+
 -- AccessRepository.person.checkFaceOwnerAccess
 select
   "asset_face"."id"
@@ -198,6 +223,16 @@ from
 where
   "asset_face"."id" in ($1)
   and "asset"."ownerId" = $2
+
+-- AccessRepository.person.checkFaceGroupAccess
+select
+  "asset_face"."id"
+from
+  "asset_face"
+  left join "asset" on "asset"."id" = "asset_face"."assetId"
+  and "asset"."deletedAt" is null
+where
+  "asset_face"."id" in ($1)
 
 -- AccessRepository.partner.checkUpdateAccess
 select

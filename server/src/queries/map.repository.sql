@@ -17,14 +17,14 @@ where
   "asset"."visibility" = $1
   and "deletedAt" is null
   and (
-    "ownerId" in ($2)
+    true
     or exists (
       select
       from
         "album_asset"
       where
         "asset"."id" = "album_asset"."assetId"
-        and "album_asset"."albumId" in ($3)
+        and "album_asset"."albumId" in ($2)
     )
   )
 order by

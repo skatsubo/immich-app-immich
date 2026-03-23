@@ -7,7 +7,6 @@ from
   "memory"
 where
   "deletedAt" is null
-  and "ownerId" = $1
 
 -- MemoryRepository.statistics (date filter)
 select
@@ -24,7 +23,6 @@ where
     or "hideAt" >= $2
   )
   and "deletedAt" is null
-  and "ownerId" = $3
 
 -- MemoryRepository.search
 select
@@ -51,7 +49,6 @@ from
   "memory"
 where
   "deletedAt" is null
-  and "ownerId" = $1
 order by
   "memoryAt" desc
 
@@ -88,7 +85,6 @@ where
     or "hideAt" >= $2
   )
   and "deletedAt" is null
-  and "ownerId" = $3
 order by
   "memoryAt" desc
 

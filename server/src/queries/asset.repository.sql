@@ -518,14 +518,13 @@ from
       "stack"."id"
   ) as "stacked_assets" on "stack"."id" is not null
 where
-  "asset"."ownerId" = $1::uuid
-  and "asset"."visibility" != $2
-  and "asset"."updatedAt" <= $3
-  and "asset"."id" > $4
+  "asset"."visibility" != $1
+  and "asset"."updatedAt" <= $2
+  and "asset"."id" > $3
 order by
   "asset"."id"
 limit
-  $5
+  $4
 
 -- AssetRepository.getChangedDeltaSync
 select
@@ -548,11 +547,10 @@ from
       "stack"."id"
   ) as "stacked_assets" on "stack"."id" is not null
 where
-  "asset"."ownerId" = any ($1::uuid[])
-  and "asset"."visibility" != $2
-  and "asset"."updatedAt" > $3
+  "asset"."visibility" != $1
+  and "asset"."updatedAt" > $2
 limit
-  $4
+  $3
 
 -- AssetRepository.detectOfflineExternalAssets
 update "asset"

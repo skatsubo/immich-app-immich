@@ -33,16 +33,15 @@ from
   and "asset"."visibility" = 'timeline'
   and "asset"."deletedAt" is null
 where
-  "person"."ownerId" = $1
-  and "asset_face"."deletedAt" is null
+  "asset_face"."deletedAt" is null
   and "asset_face"."isVisible" is true
-  and "person"."isHidden" = $2
+  and "person"."isHidden" = $1
 group by
   "person"."id"
 having
   (
-    "person"."name" != $3
-    or count("asset_face"."assetId") >= $4
+    "person"."name" != $2
+    or count("asset_face"."assetId") >= $3
   )
 order by
   "person"."isHidden" asc,
@@ -52,9 +51,9 @@ order by
   NULLIF(person.name, '') asc nulls last,
   "person"."createdAt"
 limit
-  $5
+  $4
 offset
-  $6
+  $5
 
 -- PersonRepository.getAllWithoutFaces
 select
@@ -201,14 +200,11 @@ from
   "person"
 where
   (
-    "person"."ownerId" = $1
-    and (
-      lower("person"."name") like $2
-      or lower("person"."name") like $3
-    )
+    lower("person"."name") like $1
+    or lower("person"."name") like $2
   )
 limit
-  $4
+  $3
 
 -- PersonRepository.getDistinctNames
 select distinct
@@ -217,10 +213,7 @@ select distinct
 from
   "person"
 where
-  (
-    "person"."ownerId" = $1
-    and "person"."name" != $2
-  )
+  "person"."name" != $1
 
 -- PersonRepository.getStatistics
 select
@@ -266,7 +259,6 @@ where
           and "asset"."deletedAt" is null
       )
   )
-  and "person"."ownerId" = $3
 
 -- PersonRepository.refreshFaces
 with
